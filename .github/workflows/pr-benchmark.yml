@@ -63,7 +63,7 @@ jobs:
           fetch-depth: 0
 
       - name: Setup Aztec environment
-        uses: defi-wonderland/aztec-ci-actions/actions/setup-aztec@v0
+        uses: AztecProtocol/aztec-ci-actions/actions/setup-aztec@v0
         with:
           start-pxe: "true"
           run-codegen: "true"
@@ -78,7 +78,7 @@ jobs:
         run: |
           encoded=$(echo "${BASE_REF}" | sed 's/\//-/g')
           echo "base-ref-encoded=${encoded}" >> $GITHUB_OUTPUT
-          if [[ "${BASE_REF}" == "dev" || "${BASE_REF}" == "main" ]]; then
+          if [[ "${BASE_REF}" == "main" ]]; then
             echo "workflow=${BASELINE_WORKFLOW}" >> $GITHUB_OUTPUT
           else
             echo "workflow=${PR_WORKFLOW}" >> $GITHUB_OUTPUT
@@ -95,19 +95,19 @@ jobs:
           path: ${{ env.BENCH_DIR }}
           if_no_artifact_found: warn
 
-      # Requires @defi-wonderland/aztec-benchmark to be installed in the consuming repo
-      # (e.g. via yarn add -D @defi-wonderland/aztec-benchmark).
+      # Requires @aztec/aztec-benchmark to be installed in the consuming repo
+      # (e.g. via yarn add -D @aztec/aztec-benchmark).
       - name: Generate comparison report
         run: |
           node -e "
             let runComparison;
             try {
-              ({ runComparison } = require('@defi-wonderland/aztec-benchmark/action/comparison.cjs'));
+              ({ runComparison } = require('@aztec/aztec-benchmark/action/comparison.cjs'));
             } catch (e) {
               if (e.code === 'MODULE_NOT_FOUND') {
                 console.error(
-                  'ERROR: @defi-wonderland/aztec-benchmark is not installed.\n' +
-                  'Add it as a dev-dependency (yarn add -D @defi-wonderland/aztec-benchmark) ' +
+                  'ERROR: @aztec/aztec-benchmark is not installed.\n' +
+                  'Add it as a dev-dependency (yarn add -D @aztec/aztec-benchmark) ' +
                   'and make sure dependencies are installed before this step.'
                 );
               }

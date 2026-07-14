@@ -1,5 +1,5 @@
 # Aztec Benchmark
-[![npm version](https://badge.fury.io/js/%40defi-wonderland%2Faztec-benchmark.svg)](https://www.npmjs.com/package/@defi-wonderland/aztec-benchmark)
+[![npm version](https://badge.fury.io/js/%40aztec%2Faztec-benchmark.svg)](https://www.npmjs.com/package/@aztec/aztec-benchmark)
 
 **CLI tool and reusable CI workflows for running Aztec contract benchmarks.**
 
@@ -27,9 +27,9 @@ Use the CLI to execute benchmark files written in TypeScript. For CI integration
 ## Installation
 
 ```sh
-yarn add --dev @defi-wonderland/aztec-benchmark
+yarn add --dev @aztec/aztec-benchmark
 # or
-npm install --save-dev @defi-wonderland/aztec-benchmark
+npm install --save-dev @aztec/aztec-benchmark
 ```
 
 ---
@@ -99,7 +99,7 @@ import {
   Benchmark, // Alias for BenchmarkBase
   type BenchmarkContext,
   type NamedBenchmarkedInteraction
-} from '@defi-wonderland/aztec-benchmark';
+} from '@aztec/aztec-benchmark';
 import type { PXE } from '@aztec/pxe/server';
 import type { Contract } from '@aztec/aztec.js/contracts'; // Generic Contract type from Aztec.js
 import type { AztecAddress } from '@aztec/aztec.js/addresses';
@@ -214,9 +214,9 @@ If you provide a `NamedBenchmarkedInteraction` object, its `name` field will be 
 If you provide a plain `ContractFunctionInteractionCallIntent`, the tool will attempt to derive a name from the interaction (e.g., the method name).
 If you return a `feePaymentMethod` in the `BenchmarkContext`, it is automatically passed to every transaction the profiler sends — no changes to `getMethods` are needed.
 
-### Wonderland's Usage Example
+### Aztec's Usage Example
 
-You can find how we use this tool for benchmarking our Aztec contracts in [`aztec-standards`](https://github.com/defi-wonderland/aztec-standards/tree/dev/benchmarks).
+You can find how we use this tool for benchmarking our Aztec contracts in [`aztec-standards`](https://github.com/AztecProtocol/aztec-standards/tree/main/benchmarks).
 
 ---
 
@@ -243,11 +243,11 @@ name: PR Checks
 
 on:
   pull_request:
-    branches: [dev, main]
+    branches: [main]
 
 jobs:
   benchmark:
-    uses: defi-wonderland/aztec-benchmark/.github/workflows/pr-benchmark.yml@v0
+    uses: AztecProtocol/aztec-benchmark/.github/workflows/pr-benchmark.yml@v0
     permissions:
       pull-requests: write
       issues: write
@@ -267,7 +267,7 @@ jobs:
 ```yaml
 jobs:
   benchmark:
-    uses: defi-wonderland/aztec-benchmark/.github/workflows/pr-benchmark.yml@v0
+    uses: AztecProtocol/aztec-benchmark/.github/workflows/pr-benchmark.yml@v0
     permissions:
       pull-requests: write
       issues: write
@@ -290,11 +290,11 @@ name: Update Baseline
 
 on:
   push:
-    branches: [dev, main]
+    branches: [main]
 
 jobs:
   update-baseline:
-    uses: defi-wonderland/aztec-benchmark/.github/workflows/update-baseline.yml@v0
+    uses: AztecProtocol/aztec-benchmark/.github/workflows/update-baseline.yml@v0
     permissions:
       contents: read
       actions: write

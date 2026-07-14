@@ -8,7 +8,7 @@ permissions:
 
 jobs:
   pre-release:
-    uses: defi-wonderland/aztec-ci-actions/.github/workflows/pre-release.yml@v0
+    uses: AztecProtocol/aztec-ci-actions/.github/workflows/pre-release.yml@v0
     with:
       run-compile: false
       run-codegen: false
