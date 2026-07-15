@@ -40,7 +40,7 @@ jobs:
           fetch-depth: 0
 
       - name: Setup Aztec environment
-        uses: defi-wonderland/aztec-ci-actions/actions/setup-aztec@v0
+        uses: AztecProtocol/aztec-ci-actions/actions/setup-aztec@v0
         with:
           start-pxe: "true"
           run-codegen: "true"
