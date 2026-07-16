@@ -1,5 +1,5 @@
 # Aztec Benchmark
-[![npm version](https://badge.fury.io/js/%40aztec%2Faztec-benchmark.svg)](https://www.npmjs.com/package/@aztec/aztec-benchmark)
+[![npm version](https://badge.fury.io/js/%40aztec-foundation%2Faztec-benchmark.svg)](https://www.npmjs.com/package/@aztec-foundation/aztec-benchmark)
 
 **CLI tool and reusable CI workflows for running Aztec contract benchmarks.**
 
@@ -27,9 +27,9 @@ Use the CLI to execute benchmark files written in TypeScript. For CI integration
 ## Installation
 
 ```sh
-yarn add --dev @aztec/aztec-benchmark
+yarn add --dev @aztec-foundation/aztec-benchmark
 # or
-npm install --save-dev @aztec/aztec-benchmark
+npm install --save-dev @aztec-foundation/aztec-benchmark
 ```
 
 ---
@@ -99,7 +99,7 @@ import {
   Benchmark, // Alias for BenchmarkBase
   type BenchmarkContext,
   type NamedBenchmarkedInteraction
-} from '@aztec/aztec-benchmark';
+} from '@aztec-foundation/aztec-benchmark';
 import type { PXE } from '@aztec/pxe/server';
 import type { Contract } from '@aztec/aztec.js/contracts'; // Generic Contract type from Aztec.js
 import type { AztecAddress } from '@aztec/aztec.js/addresses';

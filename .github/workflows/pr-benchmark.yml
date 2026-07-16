@@ -95,19 +95,19 @@ jobs:
           path: ${{ env.BENCH_DIR }}
           if_no_artifact_found: warn
 
-      # Requires @aztec/aztec-benchmark to be installed in the consuming repo
-      # (e.g. via yarn add -D @aztec/aztec-benchmark).
+      # Requires @aztec-foundation/aztec-benchmark to be installed in the consuming repo
+      # (e.g. via yarn add -D @aztec-foundation/aztec-benchmark).
       - name: Generate comparison report
         run: |
           node -e "
             let runComparison;
             try {
-              ({ runComparison } = require('@aztec/aztec-benchmark/action/comparison.cjs'));
+              ({ runComparison } = require('@aztec-foundation/aztec-benchmark/action/comparison.cjs'));
             } catch (e) {
               if (e.code === 'MODULE_NOT_FOUND') {
                 console.error(
-                  'ERROR: @aztec/aztec-benchmark is not installed.\n' +
-                  'Add it as a dev-dependency (yarn add -D @aztec/aztec-benchmark) ' +
+                  'ERROR: @aztec-foundation/aztec-benchmark is not installed.\n' +
+                  'Add it as a dev-dependency (yarn add -D @aztec-foundation/aztec-benchmark) ' +
                   'and make sure dependencies are installed before this step.'
                 );
               }
