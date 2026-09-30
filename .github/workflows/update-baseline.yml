@@ -35,12 +35,14 @@ jobs:
     timeout-minutes: ${{ inputs.timeout }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           fetch-depth: 0
+          # Dependency scripts and third-party installers run in this job; keep the write-scoped token off disk.
+          persist-credentials: false
 
       - name: Setup Aztec environment
-        uses: AztecProtocol/aztec-ci-actions/actions/setup-aztec@v0
+        uses: AztecProtocol/aztec-ci-actions/actions/setup-aztec@431859e477234b8690eb1f80d1305d2e34f10f1b # v0.1.1
         with:
           start-pxe: "true"
           run-codegen: "true"
@@ -64,7 +66,7 @@ jobs:
           echo "branch-encoded=${encoded}" >> $GITHUB_OUTPUT
 
       - name: Upload baseline artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: benchmark-baseline-${{ steps.encode.outputs.branch-encoded }}
           path: ${{ env.BENCH_DIR }}/*${{ env.BENCH_SUFFIX }}.benchmark.json

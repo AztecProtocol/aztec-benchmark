@@ -57,13 +57,15 @@ jobs:
     timeout-minutes: ${{ inputs.timeout }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
+          # PR code and third-party installers run in this job; keep the write-scoped token off disk.
+          persist-credentials: false
 
       - name: Setup Aztec environment
-        uses: AztecProtocol/aztec-ci-actions/actions/setup-aztec@v0
+        uses: AztecProtocol/aztec-ci-actions/actions/setup-aztec@431859e477234b8690eb1f80d1305d2e34f10f1b # v0.1.1
         with:
           start-pxe: "true"
           run-codegen: "true"
@@ -141,7 +143,7 @@ jobs:
           done
 
       - name: Comment diff on PR
-        uses: peter-evans/create-or-update-comment@v4
+        uses: peter-evans/create-or-update-comment@71345be0265236311c031f5c7866368bd1eff043 # v4.0.0
         with:
           issue-number: ${{ github.event.pull_request.number }}
           body-path: benchmark-comparison.md
@@ -162,7 +164,7 @@ jobs:
           echo "head-ref-encoded=${encoded}" >> $GITHUB_OUTPUT
 
       - name: Upload baseline
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: benchmark-baseline-${{ steps.encode-head.outputs.head-ref-encoded }}
           path: ${{ env.BENCH_DIR }}/*${{ env.CURRENT_SUFFIX }}.benchmark.json
