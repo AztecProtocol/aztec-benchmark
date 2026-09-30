@@ -255,9 +255,9 @@ The examples below use `<commit-sha>` as a placeholder for that value.
 
 ### Security notes
 
-- Trigger these workflows from `pull_request`, never `pull_request_target`. They check out and run the PR's code, including its benchmarks and dependency install scripts, in the same job that holds the token used to comment.
+- Trigger `pr-benchmark.yml` from `pull_request`, never `pull_request_target`. It checks out and runs the PR's code, including its benchmarks and dependency install scripts, in the same job that holds the token used to comment.
 - The checkout does not persist the GitHub token (`persist-credentials: false`). If your dependency install needs authenticated git access, for example private git dependencies, authenticate that step separately.
-- PRs from forks get a read-only token, so the comment step fails on them. The benchmarks still run.
+- PRs from forks get a read-only token. The benchmarks still run, but the comment step then fails the job, so no baseline artifact is uploaded for the fork branch.
 
 ### PR Benchmark (`pr-benchmark.yml`)
 

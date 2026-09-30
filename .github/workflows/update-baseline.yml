@@ -43,7 +43,7 @@ jobs:
         env:
           BLOCK_DURATION_MS: ${{ inputs.block-duration-ms }}
         run: |
-          # Aztec parses this env var with parseFloat, so "6s" would silently mean 6 ms.
+          # Aztec parses this with parseFloat ("6s" = 6 ms). Never echo the value: a newline in it would run as a workflow command.
           if [[ ! "$BLOCK_DURATION_MS" =~ ^[1-9][0-9]*$ ]]; then
             echo "::error::block-duration-ms must be a positive integer number of milliseconds"
             exit 1
