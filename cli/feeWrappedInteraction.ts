@@ -1,4 +1,4 @@
-import type { FeePaymentMethod } from '@aztec/aztec.js/fee';
+import type { FeePaymentMethod } from '@aztec-labs/aztec.js/fee';
 import {
   ContractFunctionInteraction,
   type GasSettingsOption,
@@ -6,8 +6,8 @@ import {
   type SimulateInteractionOptions,
   type ProfileInteractionOptions,
   type SendInteractionOptions,
-} from '@aztec/aztec.js/contracts';
-import { AztecAddress } from '@aztec/aztec.js/addresses';
+} from '@aztec-labs/aztec.js/contracts';
+import { AztecAddress } from '@aztec-labs/aztec.js/addresses';
 
 import type { NamedBenchmarkedInteraction } from './types.js';
 

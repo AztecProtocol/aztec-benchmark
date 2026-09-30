@@ -5,7 +5,7 @@ import path from 'node:path';
 import toml from '@iarna/toml';
 import { Profiler } from './profiler.js';
 import { BenchmarkBase, BenchmarkContext, type ProfileResult, type NamedBenchmarkedInteraction } from './types.js';
-import type { ContractFunctionInteractionCallIntent } from '@aztec/aztec.js/authorization';
+import type { ContractFunctionInteractionCallIntent } from '@aztec-labs/aztec.js/authorization';
 
 /**
  * Represents the structure of the [benchmark] section in Nargo.toml.
