@@ -79,11 +79,11 @@ jobs:
           BASE_REF: ${{ github.event.pull_request.base.ref }}
         run: |
           encoded=$(echo "${BASE_REF}" | sed 's/\//-/g')
-          echo "base-ref-encoded=${encoded}" >> $GITHUB_OUTPUT
+          echo "base-ref-encoded=${encoded}" >> "$GITHUB_OUTPUT"
           if [[ "${BASE_REF}" == "main" ]]; then
-            echo "workflow=${BASELINE_WORKFLOW}" >> $GITHUB_OUTPUT
+            echo "workflow=${BASELINE_WORKFLOW}" >> "$GITHUB_OUTPUT"
           else
-            echo "workflow=${PR_WORKFLOW}" >> $GITHUB_OUTPUT
+            echo "workflow=${PR_WORKFLOW}" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Download baseline artifact
@@ -130,10 +130,13 @@ jobs:
         continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
-          node_ids=$(gh api "/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments" \
+          node_ids=$(gh api "/repos/${REPO}/issues/${PR_NUMBER}/comments" \
             --paginate --jq '.[] | select(.body | contains("<!-- benchmark-diff -->")) | .node_id')
           for node_id in $node_ids; do
+            # shellcheck disable=SC2016 # $id is a GraphQL variable, not shell
             gh api graphql -f query='
               mutation($id: ID!) {
                 minimizeComment(input: {subjectId: $id, classifier: OUTDATED}) {
@@ -161,7 +164,7 @@ jobs:
           HEAD_REF: ${{ github.event.pull_request.head.ref }}
         run: |
           encoded=$(echo "${HEAD_REF}" | sed 's/\//-/g')
-          echo "head-ref-encoded=${encoded}" >> $GITHUB_OUTPUT
+          echo "head-ref-encoded=${encoded}" >> "$GITHUB_OUTPUT"
 
       - name: Upload baseline
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2

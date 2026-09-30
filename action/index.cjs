@@ -52,7 +52,8 @@ async function run() {
       const execOptions = {
         cwd: process.cwd()
       };
-      const exitCode = await exec.exec('npx aztec-benchmark', cliArgs, execOptions);
+      // --no: never fall back to fetching the unscoped `aztec-benchmark` npm package, which is a third party's.
+      const exitCode = await exec.exec('npx --no aztec-benchmark', cliArgs, execOptions);
       if (exitCode !== 0) {
         throw new Error(`Benchmark CLI execution failed with exit code ${exitCode}`);
       }
