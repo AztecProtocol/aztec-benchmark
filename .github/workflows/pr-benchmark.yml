@@ -35,6 +35,10 @@ on:
         description: "Include per-circuit gate breakdown in the report"
         type: boolean
         default: false
+      block-duration-ms:
+        description: "Local-network block duration in ms, exported as SEQ_BLOCK_DURATION_MS. Empty keeps the Aztec default (3000). 6000 matches mainnet's block duration and raises the per-tx DA gas cap from 55836 to 117624."
+        type: string
+        default: ""
 
 permissions:
   contents: read
@@ -56,6 +60,18 @@ jobs:
     runs-on: ${{ inputs.runner }}
     timeout-minutes: ${{ inputs.timeout }}
     steps:
+      - name: Configure block duration
+        if: inputs.block-duration-ms != ''
+        env:
+          BLOCK_DURATION_MS: ${{ inputs.block-duration-ms }}
+        run: |
+          # Aztec parses this env var with parseFloat, so "6s" would silently mean 6 ms.
+          if [[ ! "$BLOCK_DURATION_MS" =~ ^[1-9][0-9]*$ ]]; then
+            echo "::error::block-duration-ms must be a positive integer number of milliseconds"
+            exit 1
+          fi
+          echo "SEQ_BLOCK_DURATION_MS=$BLOCK_DURATION_MS" >> "$GITHUB_ENV"
+
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
