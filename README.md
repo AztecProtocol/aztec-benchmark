@@ -15,8 +15,11 @@ Use the CLI to execute benchmark files written in TypeScript. For CI integration
 - [Writing Benchmarks](#writing-benchmarks)
 - [Benchmark Output](#benchmark-output)
 - [Reusable Workflows](#reusable-workflows)
+  - [Pinning a version](#pinning-a-version)
+  - [Security notes](#security-notes)
   - [PR Benchmark (`pr-benchmark.yml`)](#pr-benchmark-pr-benchmarkyml)
   - [Update Baseline (`update-baseline.yml`)](#update-baseline-update-baselineyml)
+  - [Block duration](#block-duration)
   - [How Baselines Work](#how-baselines-work)
 - [Action Usage (Advanced)](#action-usage-advanced)
   - [Inputs](#inputs)
@@ -229,7 +232,23 @@ Each entry in the output will be identified by the custom `name` you provided (i
 
 ## Reusable Workflows
 
-This repository ships two **reusable GitHub workflows** (`workflow_call`) that handle the full CI benchmark cycle. Consumer repos call them with a single `uses:` line — no need to copy workflow YAML or wire up artifact management manually.
+This repository ships two **reusable GitHub workflows** (`workflow_call`) that handle the full CI benchmark cycle. Consumer repos call them with a single `uses:` line, with no workflow YAML to copy and no artifact management to wire up by hand.
+
+### Pinning a version
+
+Reference the workflows by the full commit SHA of a release, with the tag as a comment. A tag can be moved, but a SHA always names the same code. To resolve a release tag to its commit:
+
+```sh
+gh api repos/AztecProtocol/aztec-benchmark/commits/v6.0.0-rc.1 --jq .sha
+```
+
+The examples below use `<commit-sha>` as a placeholder for that value.
+
+### Security notes
+
+- Trigger these workflows from `pull_request`, never `pull_request_target`. They check out and run the PR's code, including its benchmarks and dependency install scripts, in the same job that holds the token used to comment.
+- The checkout does not persist the GitHub token (`persist-credentials: false`). If your dependency install needs authenticated git access, for example private git dependencies, authenticate that step separately.
+- PRs from forks get a read-only token, so the comment step fails on them. The benchmarks still run.
 
 ### PR Benchmark (`pr-benchmark.yml`)
 
@@ -247,8 +266,9 @@ on:
 
 jobs:
   benchmark:
-    uses: AztecProtocol/aztec-benchmark/.github/workflows/pr-benchmark.yml@v0
+    uses: AztecProtocol/aztec-benchmark/.github/workflows/pr-benchmark.yml@<commit-sha> # v6.0.0-rc.1
     permissions:
+      contents: read
       pull-requests: write
       issues: write
       actions: read
@@ -261,14 +281,21 @@ jobs:
 | `runner` | `string` | `ubuntu-latest-m` | GitHub runner label |
 | `timeout` | `number` | `120` | Job timeout in minutes |
 | `bench-dir` | `string` | `./benchmarks` | Directory for benchmark files |
+| `current-suffix` | `string` | `_latest` | Suffix for baseline benchmark files |
+| `pr-suffix` | `string` | `_new` | Suffix for PR benchmark files |
+| `baseline-workflow` | `string` | `update-baseline.yml` | Workflow file that produces baselines for `main` |
+| `pr-workflow` | `string` | `pr-checks.yml` | Workflow file that produces baselines for other base branches |
+| `circuit-details` | `boolean` | `false` | Include a per-circuit gate breakdown in the report |
+| `block-duration-ms` | `string` | `""` | Local-network block duration in ms; see [Block duration](#block-duration) |
 
 **With custom inputs:**
 
 ```yaml
 jobs:
   benchmark:
-    uses: AztecProtocol/aztec-benchmark/.github/workflows/pr-benchmark.yml@v0
+    uses: AztecProtocol/aztec-benchmark/.github/workflows/pr-benchmark.yml@<commit-sha> # v6.0.0-rc.1
     permissions:
+      contents: read
       pull-requests: write
       issues: write
       actions: read
@@ -276,11 +303,12 @@ jobs:
       runner: ubuntu-latest-l
       timeout: 180
       bench-dir: ./my-benchmarks
+      block-duration-ms: "6000"
 ```
 
 ### Update Baseline (`update-baseline.yml`)
 
-Runs benchmarks on the current branch and uploads the results as a baseline artifact. This should be triggered on pushes to your default branches so that PR benchmarks have a baseline to compare against.
+Runs benchmarks on the current branch and uploads the results as a baseline artifact. Trigger it on pushes to your default branches, so that PR benchmarks have a baseline to compare against.
 
 **Usage:**
 
@@ -294,7 +322,7 @@ on:
 
 jobs:
   update-baseline:
-    uses: AztecProtocol/aztec-benchmark/.github/workflows/update-baseline.yml@v0
+    uses: AztecProtocol/aztec-benchmark/.github/workflows/update-baseline.yml@<commit-sha> # v6.0.0-rc.1
     permissions:
       contents: read
       actions: write
@@ -307,13 +335,33 @@ jobs:
 | `runner` | `string` | `ubuntu-latest-m` | GitHub runner label |
 | `timeout` | `number` | `120` | Job timeout in minutes |
 | `bench-dir` | `string` | `./benchmarks` | Directory for benchmark files |
+| `current-suffix` | `string` | `_latest` | Suffix for benchmark report files |
+| `block-duration-ms` | `string` | `""` | Local-network block duration in ms; see [Block duration](#block-duration) |
+
+### Block duration
+
+`setup-aztec` starts a local network with Aztec's default 3-second blocks. Each transaction's DA gas cap is a share of the checkpoint's blob space, so more blocks per checkpoint means a lower cap:
+
+| Block duration | Blocks per 72 s checkpoint | Per-tx DA gas cap |
+|---|---|---|
+| 3000 ms (default) | 21 | 55,836 |
+| 6000 ms (mainnet) | 10 | 117,624 |
+
+A benchmark that publishes a large contract class can exceed the default cap, and then fails with `Transaction consumes N DA gas but the network only admits transactions declaring up to 55836 DA gas`. Set the same value on both workflows:
+
+```yaml
+    with:
+      block-duration-ms: "6000"
+```
+
+The value must be a positive integer number of milliseconds; anything else fails the job's first step. The node refuses to start with values it can't schedule, which is anything above about 33000 with the local network's 72 s slots. Leave the input empty to keep Aztec's default.
 
 ### How Baselines Work
 
 The workflows use GitHub Actions artifacts to store and retrieve baseline benchmark results:
 
 1. **`update-baseline.yml`** runs benchmarks with the `_latest` suffix and uploads the results as `benchmark-baseline-<branch>`.
-2. **`pr-benchmark.yml`** runs benchmarks with the `_new` suffix on the PR head, then downloads the `benchmark-baseline-<base-branch>` artifact to get the `_latest` files. It compares `_latest` (baseline) vs `_new` (PR) and comments a Markdown diff table on the PR.
+2. **`pr-benchmark.yml`** runs benchmarks with the `_new` suffix on the PR head, then downloads the `benchmark-baseline-<base-branch>` artifact to get the `_latest` files. It compares `_latest` (baseline) with `_new` (PR) and comments a Markdown diff table on the PR.
 3. Before posting the new comment, the workflow finds all previous benchmark comments on the PR (identified by a unique marker in the comment body) and hides them as **Outdated** via the GitHub GraphQL API, so the PR timeline stays clean.
 4. After comparison, the PR workflow renames `_new` files to `_latest` and uploads them as `benchmark-baseline-<head-branch>`, so stacked PRs can also compare against each other.
 
