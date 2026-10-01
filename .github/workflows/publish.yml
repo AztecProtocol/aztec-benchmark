@@ -37,10 +37,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out github repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
       - name: Use Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22.17.0
           cache: "yarn"
@@ -82,10 +82,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out github repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
       - name: Use Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22.17.0
           cache: "yarn"
@@ -93,8 +93,9 @@ jobs:
 
       - name: Validate input version matches package.json
         if: github.event_name == 'workflow_dispatch' && github.event.inputs.version != ''
+        env:
+          INPUT_VERSION: ${{ github.event.inputs.version }}
         run: |
-          INPUT_VERSION="${{ github.event.inputs.version }}"
           PKG_VERSION=$(node -p "require('./package.json').version")
           echo "Input version: $INPUT_VERSION"
           echo "package.json version: $PKG_VERSION"
@@ -105,9 +106,10 @@ jobs:
 
       - name: Validate release tag matches package.json
         if: github.event_name == 'release'
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
         run: |
-          TAG_VERSION="${{ github.event.release.tag_name }}"
-          TAG_VERSION="${TAG_VERSION#v}"   # Strip an optional leading "v"
+          TAG_VERSION="${RELEASE_TAG#v}"   # Strip an optional leading "v"
           PKG_VERSION=$(node -p "require('./package.json').version")
           echo "Release tag version: $TAG_VERSION"
           echo "package.json version: $PKG_VERSION"

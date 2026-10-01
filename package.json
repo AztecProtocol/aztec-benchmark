@@ -1,6 +1,6 @@
 {
   "name": "@aztec-foundation/aztec-benchmark",
-  "version": "5.0.1",
+  "version": "6.0.0-rc.1",
   "description": "CLI tool and GitHub Action for Aztec contract benchmarking",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -46,16 +46,16 @@
     "typescript": "5.8.3"
   },
   "peerDependencies": {
-    "@aztec/aztec.js": ">=5.0.0 <6",
-    "@aztec/wallets": ">=5.0.0 <6"
+    "@aztec-labs/aztec.js": ">=6.0.0-0 <7",
+    "@aztec-labs/wallets": ">=6.0.0-0 <7"
   },
   "config": {
-    "aztecVersion": "5.0.1"
+    "aztecVersion": "6.0.0-rc.1"
   },
   "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e",
   "devDependencies": {
-    "@aztec/aztec.js": "5.0.1",
-    "@aztec/wallets": "5.0.1",
+    "@aztec-labs/aztec.js": "6.0.0-rc.1",
+    "@aztec-labs/wallets": "6.0.0-rc.1",
     "@commitlint/cli": "20.3.1",
     "@commitlint/config-conventional": "20.2.0",
     "@vercel/ncc": "0.38.3",

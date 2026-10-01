@@ -19,6 +19,10 @@ on:
         description: "Suffix for benchmark report files"
         type: string
         default: "_latest"
+      block-duration-ms:
+        description: "Local-network block duration in ms, exported as SEQ_BLOCK_DURATION_MS. Empty keeps the Aztec default (3000). 6000 matches mainnet's block duration and raises the per-tx DA gas cap from 55836 to 117624."
+        type: string
+        default: ""
 
 permissions:
   contents: read
@@ -34,13 +38,27 @@ jobs:
     runs-on: ${{ inputs.runner }}
     timeout-minutes: ${{ inputs.timeout }}
     steps:
+      - name: Configure block duration
+        if: inputs.block-duration-ms != ''
+        env:
+          BLOCK_DURATION_MS: ${{ inputs.block-duration-ms }}
+        run: |
+          # Aztec parses this with parseFloat ("6s" = 6 ms). Never echo the value: a newline in it would run as a workflow command.
+          if [[ ! "$BLOCK_DURATION_MS" =~ ^[1-9][0-9]*$ ]]; then
+            echo "::error::block-duration-ms must be a positive integer number of milliseconds"
+            exit 1
+          fi
+          echo "SEQ_BLOCK_DURATION_MS=$BLOCK_DURATION_MS" >> "$GITHUB_ENV"
+
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           fetch-depth: 0
+          # Dependency scripts and third-party installers run in this job; keep the write-scoped token off disk.
+          persist-credentials: false
 
       - name: Setup Aztec environment
-        uses: AztecProtocol/aztec-ci-actions/actions/setup-aztec@v0
+        uses: AztecProtocol/aztec-ci-actions/actions/setup-aztec@431859e477234b8690eb1f80d1305d2e34f10f1b # v0.1.1
         with:
           start-pxe: "true"
           run-codegen: "true"
@@ -61,10 +79,10 @@ jobs:
           BRANCH_NAME: ${{ github.ref_name }}
         run: |
           encoded=$(echo "${BRANCH_NAME}" | sed 's/\//-/g')
-          echo "branch-encoded=${encoded}" >> $GITHUB_OUTPUT
+          echo "branch-encoded=${encoded}" >> "$GITHUB_OUTPUT"
 
       - name: Upload baseline artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: benchmark-baseline-${{ steps.encode.outputs.branch-encoded }}
           path: ${{ env.BENCH_DIR }}/*${{ env.BENCH_SUFFIX }}.benchmark.json

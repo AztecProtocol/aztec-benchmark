@@ -35,6 +35,10 @@ on:
         description: "Include per-circuit gate breakdown in the report"
         type: boolean
         default: false
+      block-duration-ms:
+        description: "Local-network block duration in ms, exported as SEQ_BLOCK_DURATION_MS. Empty keeps the Aztec default (3000). 6000 matches mainnet's block duration and raises the per-tx DA gas cap from 55836 to 117624."
+        type: string
+        default: ""
 
 permissions:
   contents: read
@@ -56,14 +60,28 @@ jobs:
     runs-on: ${{ inputs.runner }}
     timeout-minutes: ${{ inputs.timeout }}
     steps:
+      - name: Configure block duration
+        if: inputs.block-duration-ms != ''
+        env:
+          BLOCK_DURATION_MS: ${{ inputs.block-duration-ms }}
+        run: |
+          # Aztec parses this with parseFloat ("6s" = 6 ms). Never echo the value: a newline in it would run as a workflow command.
+          if [[ ! "$BLOCK_DURATION_MS" =~ ^[1-9][0-9]*$ ]]; then
+            echo "::error::block-duration-ms must be a positive integer number of milliseconds"
+            exit 1
+          fi
+          echo "SEQ_BLOCK_DURATION_MS=$BLOCK_DURATION_MS" >> "$GITHUB_ENV"
+
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
+          # PR code and third-party installers run in this job; keep the write-scoped token off disk.
+          persist-credentials: false
 
       - name: Setup Aztec environment
-        uses: AztecProtocol/aztec-ci-actions/actions/setup-aztec@v0
+        uses: AztecProtocol/aztec-ci-actions/actions/setup-aztec@431859e477234b8690eb1f80d1305d2e34f10f1b # v0.1.1
         with:
           start-pxe: "true"
           run-codegen: "true"
@@ -77,11 +95,11 @@ jobs:
           BASE_REF: ${{ github.event.pull_request.base.ref }}
         run: |
           encoded=$(echo "${BASE_REF}" | sed 's/\//-/g')
-          echo "base-ref-encoded=${encoded}" >> $GITHUB_OUTPUT
+          echo "base-ref-encoded=${encoded}" >> "$GITHUB_OUTPUT"
           if [[ "${BASE_REF}" == "main" ]]; then
-            echo "workflow=${BASELINE_WORKFLOW}" >> $GITHUB_OUTPUT
+            echo "workflow=${BASELINE_WORKFLOW}" >> "$GITHUB_OUTPUT"
           else
-            echo "workflow=${PR_WORKFLOW}" >> $GITHUB_OUTPUT
+            echo "workflow=${PR_WORKFLOW}" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Download baseline artifact
@@ -128,10 +146,13 @@ jobs:
         continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
-          node_ids=$(gh api "/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments" \
+          node_ids=$(gh api "/repos/${REPO}/issues/${PR_NUMBER}/comments" \
             --paginate --jq '.[] | select(.body | contains("<!-- benchmark-diff -->")) | .node_id')
           for node_id in $node_ids; do
+            # shellcheck disable=SC2016 # $id is a GraphQL variable, not shell
             gh api graphql -f query='
               mutation($id: ID!) {
                 minimizeComment(input: {subjectId: $id, classifier: OUTDATED}) {
@@ -141,7 +162,7 @@ jobs:
           done
 
       - name: Comment diff on PR
-        uses: peter-evans/create-or-update-comment@v4
+        uses: peter-evans/create-or-update-comment@71345be0265236311c031f5c7866368bd1eff043 # v4.0.0
         with:
           issue-number: ${{ github.event.pull_request.number }}
           body-path: benchmark-comparison.md
@@ -159,10 +180,10 @@ jobs:
           HEAD_REF: ${{ github.event.pull_request.head.ref }}
         run: |
           encoded=$(echo "${HEAD_REF}" | sed 's/\//-/g')
-          echo "head-ref-encoded=${encoded}" >> $GITHUB_OUTPUT
+          echo "head-ref-encoded=${encoded}" >> "$GITHUB_OUTPUT"
 
       - name: Upload baseline
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: benchmark-baseline-${{ steps.encode-head.outputs.head-ref-encoded }}
           path: ${{ env.BENCH_DIR }}/*${{ env.CURRENT_SUFFIX }}.benchmark.json

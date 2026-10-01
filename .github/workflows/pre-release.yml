@@ -8,8 +8,7 @@ permissions:
 
 jobs:
   pre-release:
-    uses: AztecProtocol/aztec-ci-actions/.github/workflows/pre-release.yml@v0
+    uses: AztecProtocol/aztec-ci-actions/.github/workflows/pre-release.yml@431859e477234b8690eb1f80d1305d2e34f10f1b # v0.1.1
     with:
       run-compile: false
       run-codegen: false
-    secrets: inherit
