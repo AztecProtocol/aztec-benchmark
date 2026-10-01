@@ -18,6 +18,10 @@ on:
 
 permissions:
   contents: read
+  # npm trusted publishing (OIDC): the npm CLI exchanges the job's GitHub OIDC token for a
+  # short-lived publish token. The trusted publisher must be configured on npmjs.com for
+  # this repository and this workflow file (publish.yml). No NPM_TOKEN is used.
+  id-token: write
 
 # Serialize publishes per ref so rapid pushes don't publish concurrently.
 concurrency:
@@ -42,6 +46,10 @@ jobs:
           cache: "yarn"
           registry-url: "https://registry.npmjs.org"
 
+      # Trusted publishing needs npm >= 11.5.1; Node 22 bundles npm 10.
+      - name: Upgrade npm
+        run: npm install -g npm@11
+
       - name: Install dependencies
         run: yarn install --frozen-lockfile
 
@@ -52,15 +60,13 @@ jobs:
         run: yarn version --new-version "0.0.0-snapshot.${GITHUB_SHA::8}" --no-git-tag-version
 
       - name: Publish canary
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           PKG=$(node -p "require('./package.json').name")
           VERSION=$(node -p "require('./package.json').version")
           # Idempotent: re-running the same commit must not 409 on an existing version.
+          # The OIDC token only authorizes `npm publish`, so dist-tags are left as they are.
           if npm view "$PKG@$VERSION" version >/dev/null 2>&1; then
-            echo "$PKG@$VERSION already published; moving the 'canary' dist-tag to it."
-            npm dist-tag add "$PKG@$VERSION" canary
+            echo "$PKG@$VERSION already published; skipping."
           else
             npm publish --ignore-scripts --access public --tag canary
           fi
@@ -110,6 +116,10 @@ jobs:
             exit 1
           fi
 
+      # Trusted publishing needs npm >= 11.5.1; Node 22 bundles npm 10.
+      - name: Upgrade npm
+        run: npm install -g npm@11
+
       - name: Install dependencies
         run: yarn install --frozen-lockfile
 
@@ -117,8 +127,6 @@ jobs:
         run: yarn build
 
       - name: Publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           PKG=$(node -p "require('./package.json').name")
           VERSION=$(node -p "require('./package.json').version")
@@ -128,11 +136,16 @@ jobs:
           else
             TAG="latest"
           fi
-          # Idempotent: a re-run of an already-published version re-points the dist-tag
-          # instead of failing with a 409.
+          # Idempotent: a re-run of an already-published version must not 409. The OIDC
+          # token only authorizes `npm publish`, so a stale dist-tag has to be moved by a
+          # maintainer with `npm dist-tag add`.
           if npm view "$PKG@$VERSION" version >/dev/null 2>&1; then
-            echo "$PKG@$VERSION already published; ensuring the '$TAG' dist-tag points to it."
-            npm dist-tag add "$PKG@$VERSION" "$TAG"
+            CURRENT=$(npm view "$PKG" "dist-tags.$TAG")
+            if [ "$CURRENT" = "$VERSION" ]; then
+              echo "$PKG@$VERSION already published under '$TAG'; nothing to do."
+            else
+              echo "::warning::$PKG@$VERSION is already published but '$TAG' points to '${CURRENT:-nothing}'. Trusted publishing cannot move dist-tags; if intended, run: npm dist-tag add $PKG@$VERSION $TAG"
+            fi
           else
             npm publish --ignore-scripts --access public --tag "$TAG"
           fi
